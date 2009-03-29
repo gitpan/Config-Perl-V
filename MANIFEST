@@ -1,0 +1,10 @@
+MANIFEST
+Changelog
+Makefile.PL
+README
+V.pm
+t/00_pod.t
+t/01_pod.t
+t/10_base.t
+examples/show-v.pl
+META.yml                                 Module meta-data (added by MakeMaker)
