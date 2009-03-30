@@ -5,7 +5,7 @@ package Config::Perl::V;
 use strict;
 use warnings;
 
-our $VERSION = "0.01";
+our $VERSION = "0.02";
 
 use Config;
 
@@ -71,6 +71,9 @@ my %BTD = map { $_ => 0 } qw(
 # 2. Reported by 'perl -V' (the rest)
 my @config_vars = qw(
 
+    api_subversion
+    api_version
+    api_versionstring
     archlibexp
     dont_use_nlink
     d_readlink
@@ -78,13 +81,23 @@ my @config_vars = qw(
     exe_ext
     inc_version_list
     ldlibpthname
+    patchlevel
     path_sep
+    perl_patchlevel
     privlibexp
     scriptdir
     sitearchexp
     sitelibexp
+    subversion
     usevendorprefix
     version
+
+    git_commit_id
+    git_describe
+    git_branch
+    git_uncommitted_changes
+    git_commit_id_title
+    git_snapshot_date
 
     package revision version_patchlevel_string
 
@@ -117,11 +130,121 @@ my @config_vars = qw(
     cccdlflags lddlflags
     );
 
+my %empty_build = (
+    osname  => "",
+    stamp   => 0,
+    options => { %BTD },
+    patches => [],
+    );
+
+sub _make_derived
+{
+    my $conf = shift;
+
+    for ( [ lseektype		=> "Off_t"	],
+	  [ myuname		=> "uname"	],
+	  [ perl_patchlevel	=> "patch"	],
+	  ) {
+	my ($official, $derived) = @$_;
+	$conf->{config}{$derived}  ||= $conf->{config}{$official};
+	$conf->{config}{$official} ||= $conf->{config}{$derived};
+	$conf->{derived}{$derived} = delete $conf->{config}{$derived};
+	}
+
+    if (exists $conf->{config}{version_patchlevel_string} &&
+       !exists $conf->{config}{api_version}) {
+	my $vps = $conf->{config}{version_patchlevel_string};
+	$vps =~ s{\b revision   \s+ (\S+) }{}x and
+	    $conf->{config}{revision}        ||= $1;
+
+	$vps =~ s{\b version    \s+ (\S+) }{}x and
+	    $conf->{config}{api_version}     ||= $1;
+	$vps =~ s{\b subversion \s+ (\S+) }{}x and
+	    $conf->{config}{subversion}      ||= $1;
+	$vps =~ s{\b patch      \s+ (\S+) }{}x and
+	    $conf->{config}{perl_patchlevel} ||= $1;
+	}
+
+    ($conf->{config}{version_patchlevel_string} ||= join " ",
+	map  { ($_, $conf->{config}{$_} ) }
+	grep {      $conf->{config}{$_}   }
+	qw( api_version subversion perl_patchlevel )) =~ s/\bperl_//; 
+
+    $conf->{config}{perl_patchlevel}  ||= "";	# 0 is not a valid patchlevel
+
+    if ($conf->{config}{perl_patchlevel} =~ m{^git\w*-([^-]+)}i) {
+	$conf->{config}{git_branch}   ||= $1;
+	$conf->{config}{git_describe} ||= $conf->{config}{perl_patchlevel};
+	}
+
+    $conf;
+    } # _make_derived
+
+sub plv2hash
+{
+    my %config;
+    for (split m/\n+/ => join "\n", @_) {
+
+	if (s/^Summary of my\s+(\S+)\s+\(\s*(.*?)\s*\)//) {
+	    $config{"package"} = $1;
+	    my $rev = $2;
+	    $rev =~ s/^ revision \s+ (\S+) \s*//x and $config{revision} = $1;
+	    $rev and $config{version_patchlevel_string} = $rev;
+	    next;
+	    }
+
+	if (s/^\s+(Snapshot of:)\s+(\S+)//) {
+	    $config{git_commit_id_title} = $1;
+	    $config{git_commit_id}       = $2;
+	    next;
+	    }
+
+	my %kv = m/\G,?\s*([^=]+)=('[^']+?'|\S+)/gc;
+
+	while (my ($k, $v) = each %kv) {
+	    $k =~ s/\s+$//;
+	    $v =~ s/,$//;
+	    $v =~ m/^'(.*)'$/ and $v = $1;
+	    $v =~ s/^\s+//;
+	    $v =~ s/\s+$//;
+	    $config{$k} = $v;
+	    }
+	}
+    my $build = { %empty_build };
+    $build->{osname} = $config{osname};
+    return _make_derived ({
+	build		=> $build,
+	environment	=> {},
+	config		=> \%config,
+	derived		=> {},
+	inc		=> [],
+	});
+    } # plv2hash
+
+sub summary
+{
+    my $conf = shift;
+    ref $conf eq "HASH" &&
+	exists $conf->{config} && exists $conf->{build} or return;
+
+    my %info = map {
+	exists $conf->{config}{$_} ? ( $_ => $conf->{config}{$_} ) : () }
+	qw( archname osname osvers revision patchlevel subversion version
+	    cc ccversion gccversion config_args inc_version_list
+	    d_longdbl d_longlong use64bitall use64bitint useithreads
+	    uselongdouble usemultiplicity usemymalloc useperlio useshrplib 
+	    doublesize intsize ivsize nvsize longdblsize longlongsize lseeksize
+	    );
+    $info{$_}++ for grep { $conf->{build}{options}{$_} } keys %{$conf->{build}{options}};
+
+    return \%info;
+    } # summary
+
 sub myconfig
 {
     my $args = shift;
-    my %args = ref $args eq "HASH"  ? %  $args  :
-               ref $args eq "ARRAY" ? %{@$args} : ();
+    my %args = ref $args eq "HASH"  ? %$args :
+               ref $args eq "ARRAY" ? @$args : ();
 
     #y $pv = qx[$^X -e"sub Config::myconfig{};" -V];
     my $pv = qx[$^X -V];
@@ -130,12 +253,7 @@ sub myconfig
 
     #print $pv;
 
-    my $build = {
-	osname  => "",
-	stamp   => "",
-	options => \%BTD,
-	patches => [],
-	};
+    my $build = { %empty_build };
     $pv =~ m{^\s+Built under (.*)}m                and $build->{osname} = $1;
     $pv =~ m{^\s+Compiled at (.*)}m                and $build->{stamp}  = $1;
     $pv =~ m{^\s+Locally applied patches:\s+(.*)}m and $build->{patches} = [ split m/\s+/, $1 ];
@@ -143,24 +261,19 @@ sub myconfig
 
     my @KEYS = keys %ENV;
     my %env  =
-	map   { $_    => $ENV{$_} } grep m/^PERL/ => @ENV;
-    $args{db} || $args{pg} || $args{postgres} and
-	map { $env{$_} = $ENV{$_} } grep m{^PG}        => @KEYS;
-    $args{db} || $args{oracle} and
-	map { $env{$_} = $ENV{$_} } grep m{^ORACLE}    => @KEYS;
-    $args{db} || $args{mysql}  and
-	map { $env{$_} = $ENV{$_} } grep m{^M[yY]SQL}  => @KEYS;
+	map {      $_ => $ENV{$_} } grep m/^PERL/      => @KEYS;
     $args{env} and
 	map { $env{$_} = $ENV{$_} } grep m{$args{env}} => @KEYS;
 
     my %config = map { $_ => $Config{$_} } @config_vars;
 
-    return {
+    return _make_derived ({
 	build		=> $build,
 	environment	=> \%env,
 	config		=> \%config,
+	derived		=> {},
 	inc		=> \@INC,
-	};
+	});
     } # myconfig
 
 1;
@@ -173,16 +286,128 @@ Config::Perl::V - Structured data retreival of perl -V output
 
 =head1 SYNOPSIS
 
-use Config::Perl::V;
+ use Config::Perl::V;
 
-my $local_config = Config::Perl::V::myconfig ();
-print $local_config->{config}{osname};
+ my $local_config = Config::Perl::V::myconfig ();
+ print $local_config->{config}{osname};
 
 =head1 DESCRIPTION
 
-=head2 myconfig ()
+=head2 $conf = myconfig ()
 
-Currently the only function. Documentation will follow.
+This function will collect the data decribed in L<the hash structure> below,
+and return that as a hash reference. It optionally accepts an option to
+include more entries from %ENV. See L<environment> below.
+
+Note that this will not work on uninstalled perls when called with
+C<-I/path/to/uninstalled/perl/lib>, but it works when that path is in
+C<$PERL5LIB> or in C<$PERL5OPT>, as paths passed using C<-I> are not
+known when the C<-V> information is collected.
+
+=head2 $conf = plv2hash ($text [, ...])
+
+Convert a sole 'perl -V' text block, or list of lines, to a complete
+myconfig hash.  All unknown entries are defaulted.
+
+=head2 $info = summary ($conf)
+
+Return an arbitrary selection of the information.
+
+=head2 The hash structure
+
+The returned hash consists of 4 parts:
+
+=over 4
+
+=item build
+
+This information is extracted from the second block that is emitted by
+C<perl -V>, and usually looks something like
+
+ Characteristics of this binary (from libperl):
+   Compile-time options: DEBUGGING USE_64_BIT_INT USE_LARGE_FILES
+   Locally applied patches:
+	 defined-or
+	 MAINT24637
+   Built under linux
+   Compiled at Jun 13 2005 10:44:20
+   @INC:
+     /usr/lib/perl5/5.8.7/i686-linux-64int
+     /usr/lib/perl5/5.8.7
+     /usr/lib/perl5/site_perl/5.8.7/i686-linux-64int
+     /usr/lib/perl5/site_perl/5.8.7
+     /usr/lib/perl5/site_perl
+     .
+
+or
+
+ Characteristics of this binary (from libperl):
+   Compile-time options: DEBUGGING MULTIPLICITY
+			 PERL_DONT_CREATE_GVSV PERL_IMPLICIT_CONTEXT
+			 PERL_MALLOC_WRAP PERL_TRACK_MEMPOOL
+			 PERL_USE_SAFE_PUTENV USE_ITHREADS
+			 USE_LARGE_FILES USE_PERLIO
+			 USE_REENTRANT_API
+   Built under linux
+   Compiled at Jan 28 2009 15:26:59
+
+This information is not available anywhere else, including C<%Config>,
+but it is the information that is only known to the perl binary.
+
+The extracted information is stored in 5 entries in the C<build> hash:
+
+=over 4
+
+=item osname
+
+This is most likely the same as C$Config{osname}>, and was the name
+known when perl was built. It might be different if perl was cross-compiled.
+
+The default for this field, if it cannot be extracted, is to copy C<$Config{osname}>.
+`
+=item stamp
+
+This is the time string for which the perl binary was compiled. The default
+value is 0.
+
+=item options
+
+This is a hash with all the known defines as keys. The value is either 0,
+which means unknown or unset, or 1, which means defined.
+
+=item derived
+
+As some verables are reported by a different name in the output of C<perl -V>
+than their actual name in C<%Config>, I decided to leave the C<config> entry
+as close to reality as possible, and put in the entries that might have been
+guessed by the printed output in a seperate block.
+
+=item patches
+
+This is a list of optionally locally applied patches. Default is an empty list.
+
+=back
+
+=item environment
+
+By default this hash is only filled with the environment variables
+out of %ENV that start with C<PERL>, but you can pass the C<env> option
+to myconfig to get more
+
+ my $conf = Config::Perl::V::myconfig ({ env => qr/^ORACLE/ });
+ my $conf = Config::Perl::V::myconfig ([ env => qr/^ORACLE/ ]);
+
+=item config
+
+This hash is filled with the variables that C<perl -V> fills its report
+with, and it has the same variables that C<Config::myconfig> returns
+from C<%Config>.
+
+=item inc
+
+This is the list of default @INC.
+
+=back
 
 =head1 REASONING
 
@@ -198,9 +423,10 @@ Please feedback what is wrong
 
 =head1 TODO
 
-* Implement retreival functions/methods
-* Document what is done and why
-* Include the perl -V parse block from Andreas
+* Implement retrieval functions/methods
+* Documentation
+* Error checking
+* Tests
 
 =head1 AUTHOR
 
@@ -208,7 +434,7 @@ H.Merijn Brand <h.m.brand@xs4all.nl>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 1999-2009 H.Merijn Brand
+Copyright (C) 2009 H.Merijn Brand
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
