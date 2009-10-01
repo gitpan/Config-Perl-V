@@ -8,7 +8,7 @@ use warnings;
 use Config;
 use Exporter;
 use vars qw($VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
-$VERSION     = "0.05";
+$VERSION     = "0.10";
 @ISA         = ("Exporter");
 @EXPORT_OK   = qw( plv2hash summary myconfig signature );
 %EXPORT_TAGS = (
@@ -28,7 +28,9 @@ my %BTD = map { $_ => 0 } qw(
 
     DEBUGGING
     NO_MATHOMS
+    PERL_DISABLE_PMC
     PERL_DONT_CREATE_GVSV
+    PERL_IS_MINIPERL
     PERL_MALLOC_WRAP
     PERL_MEM_LOG
     PERL_MEM_LOG_ENV
@@ -395,7 +397,7 @@ This is most likely the same as C$Config{osname}>, and was the name
 known when perl was built. It might be different if perl was cross-compiled.
 
 The default for this field, if it cannot be extracted, is to copy C<$Config{osname}>.
-`
+
 =item stamp
 
 This is the time string for which the perl binary was compiled. The default
@@ -454,10 +456,10 @@ Please feedback what is wrong
 
 =head1 TODO
 
-* Implement retrieval functions/methods
-* Documentation
-* Error checking
-* Tests
+ * Implement retrieval functions/methods
+ * Documentation
+ * Error checking
+ * Tests
 
 =head1 AUTHOR
 
