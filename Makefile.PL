@@ -1,13 +1,14 @@
 #!/usr/bin/perl
 
-# Copyright PROCURA B.V. (c) 2009-2010 H.Merijn Brand
+# Copyright PROCURA B.V. (c) 2009-2011 H.Merijn Brand
 
 use strict;
 
 use ExtUtils::MakeMaker;
 
 my %wm = (
-    NAME	  =>   "Config-Perl-V",
+    NAME	  =>   "Config::Perl::V",
+    DISTNAME	  =>   "Config-Perl-V",
     AUTHOR        =>   "H.Merijn Brand <h.m.brand\@xs4all.nl>",
     VERSION_FROM  =>   "V.pm",
     ABSTRACT_FROM =>   "V.pm",
