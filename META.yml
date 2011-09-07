@@ -1,6 +1,6 @@
 --- #YAML:1.0
-name:                    Config::Perl::V
-version:                 0.12
+name:                    Config-Perl-V
+version:                 0.13
 abstract:                Structured data retreival of perl -V output
 license:                 perl
 author:              
@@ -10,15 +10,17 @@ distribution_type:       module
 provides:
     Config::Perl::V:
         file:            V.pm
-        version:         0.12
+        version:         0.13
 requires:     
-    perl:                5.005
+    perl:                5.006
+    Config:              0
 recommends:
-    perl:                5.010001
+    perl:                5.014001
 configure_requires:
     ExtUtils::MakeMaker: 0
 build_requires:
-    perl:                5.005
+    perl:                5.006
+test_requires:
     Test::Harness:       0
     Test::More:          0
     Test::NoWarnings:    0
