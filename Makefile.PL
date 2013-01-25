@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright PROCURA B.V. (c) 2009-2012 H.Merijn Brand
+# Copyright PROCURA B.V. (c) 2009-2013 H.Merijn Brand
 
 use strict;
 
@@ -17,6 +17,8 @@ my %wm = (
 		       "Test::More"		=> 0,
 		       "Test::NoWarnings"	=> 0,
 		       },
+    macro        => { TARFLAGS => "--format=ustar -c -v -f",
+		      }
     );
 $ExtUtils::MakeMaker::VERSION > 6.30 and $wm{LICENSE} = "perl";
 
