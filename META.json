@@ -1,61 +1,61 @@
 {
-   "generated_by" : "Author",
-   "version" : "0.18",
-   "dynamic_config" : 1,
-   "resources" : {
-      "repository" : {
-         "web" : "http://repo.or.cz/w/Config-Perl-V.git",
-         "type" : "git",
-         "url" : "http://repo.or.cz/r/Config-Perl-V.git"
-      },
-      "license" : [
-         "http://dev.perl.org/licenses/"
-      ]
-   },
-   "provides" : {
-      "Config::Perl::V" : {
-         "version" : "0.18",
-         "file" : "V.pm"
-      }
-   },
    "author" : [
       "H.Merijn Brand <h.m.brand@xs4all.nl>"
-   ],
+      ],
    "abstract" : "Structured data retrieval of perl -V output",
-   "name" : "Config-Perl-V",
-   "release_status" : "stable",
+   "provides" : {
+      "Config::Perl::V" : {
+         "version" : "0.19",
+         "file" : "V.pm"
+         }
+      },
    "license" : [
       "perl_5"
-   ],
+      ],
+   "dynamic_config" : 1,
+   "resources" : {
+      "license" : [
+         "http://dev.perl.org/licenses/"
+         ],
+      "repository" : {
+         "web" : "http://repo.or.cz/w/Config-Perl-V.git",
+         "url" : "http://repo.or.cz/r/Config-Perl-V.git",
+         "type" : "git"
+         }
+      },
    "prereqs" : {
-      "build" : {
+      "configure" : {
          "requires" : {
-            "perl" : "5.006"
-         }
-      },
-      "runtime" : {
-         "recommends" : {
-            "perl" : "5.016003"
+            "ExtUtils::MakeMaker" : "0"
+            }
          },
-         "requires" : {
-            "Config" : "0",
-            "perl" : "5.006"
-         }
-      },
       "test" : {
          "requires" : {
             "Test::More" : "0",
             "Test::NoWarnings" : "0"
+            }
+         },
+      "build" : {
+         "requires" : {
+            "perl" : "5.006"
+            }
+         },
+      "runtime" : {
+         "recommends" : {
+            "perl" : "5.016003"
+            },
+         "requires" : {
+            "perl" : "5.006",
+            "Config" : "0"
+            }
          }
       },
-      "configure" : {
-         "requires" : {
-            "ExtUtils::MakeMaker" : "0"
-         }
-      }
-   },
+   "generated_by" : "Author",
+   "version" : "0.19",
+   "release_status" : "stable",
+   "name" : "Config-Perl-V",
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
       "version" : "2"
+      }
    }
-}
