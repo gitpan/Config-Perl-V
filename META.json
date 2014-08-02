@@ -1,15 +1,49 @@
 {
-   "version" : "0.21",
+   "abstract" : "Structured data retrieval of perl -V output",
+   "author" : [
+      "H.Merijn Brand <h.m.brand@xs4all.nl>"
+   ],
+   "resources" : {
+      "license" : [
+         "http://dev.perl.org/licenses/"
+      ],
+      "repository" : {
+         "web" : "http://repo.or.cz/w/Config-Perl-V.git",
+         "url" : "http://repo.or.cz/r/Config-Perl-V.git",
+         "type" : "git"
+      }
+   },
+   "provides" : {
+      "Config::Perl::V" : {
+         "version" : "0.22",
+         "file" : "V.pm"
+      }
+   },
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Config-Perl-V",
+   "license" : [
+      "perl_5"
+   ],
+   "version" : "0.22",
+   "dynamic_config" : 1,
    "prereqs" : {
-      "build" : {
+      "configure" : {
          "requires" : {
-            "perl" : "5.006"
+            "ExtUtils::MakeMaker" : "0"
          }
       },
       "test" : {
          "requires" : {
             "Test::NoWarnings" : "0",
             "Test::More" : "0"
+         }
+      },
+      "build" : {
+         "requires" : {
+            "perl" : "5.006"
          }
       },
       "runtime" : {
@@ -20,42 +54,8 @@
          "recommends" : {
             "perl" : "5.020000"
          }
-      },
-      "configure" : {
-         "requires" : {
-            "ExtUtils::MakeMaker" : "0"
-         }
       }
    },
-   "license" : [
-      "perl_5"
-   ],
-   "author" : [
-      "H.Merijn Brand <h.m.brand@xs4all.nl>"
-   ],
-   "dynamic_config" : 1,
-   "abstract" : "Structured data retrieval of perl -V output",
-   "resources" : {
-      "license" : [
-         "http://dev.perl.org/licenses/"
-      ],
-      "repository" : {
-         "type" : "git",
-         "web" : "http://repo.or.cz/w/Config-Perl-V.git",
-         "url" : "http://repo.or.cz/r/Config-Perl-V.git"
-      }
-   },
-   "generated_by" : "Author",
    "release_status" : "stable",
-   "provides" : {
-      "Config::Perl::V" : {
-         "file" : "V.pm",
-         "version" : "0.21"
-      }
-   },
-   "meta-spec" : {
-      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
-      "version" : "2"
-   },
-   "name" : "Config-Perl-V"
+   "generated_by" : "Author"
 }
